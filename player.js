@@ -8,26 +8,33 @@ class Player{
             this.ySpeed = ySpeed;
                 
         }
+    
      drawPlayer(){ // Draw the player (similar to colorRect)
             canvasContext.fillStyle = this.c;
             canvasContext.fillRect(this.x,this.y,this.w,this.h);
         }
             
-     pMove(){
+     pFall(){ // makes the player fall
             this.ySpeed += gravity;
-         
+            if(this.y > canvas.height){
+                gameOver = true;
+            }
         }
            
-     playerMove(){
+     pMove(){ // makes the player move (gravity and jumping)
             this.y += this.ySpeed;
-
         }
            
-     pJump(){
+     pJump(){ // makes the player jump
             if(jump && this.y > 0 + this.h){
                 this.ySpeed = jHeight;
-                 console.log(jump)
                 jump = false;
             }
         }
+    
+    updateYpos(){
+        ppY = this.y;
+        ppW = this.w;
+        ppH = this.h;
+    }
 }
