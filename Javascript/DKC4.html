@@ -1,0 +1,236 @@
+<!doctype html>
+
+<body>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+</body>
+
+
+<html>
+<style>
+    html {
+        background-color: white;
+    }
+
+    canvas {
+        border: 2px solid black;
+    }
+
+</style>
+
+</html>
+
+
+
+<script src='player.js'></script>
+<script src='Pipe.js'></script>
+
+<script>
+    var canvas, canvasContext, imageAssets;
+
+    window.onload = function() {
+
+        canvas = document.getElementById('gameCanvas');
+        canvasContext = canvas.getContext('2d');
+        imageAssets = loadImgAssets();
+
+        document.addEventListener('keydown', keyPressed);
+        document.addEventListener('keyup', keyReleased);
+
+        setInterval(mainLoop, 1000 / 60);
+
+        pipes.forEach(function(Pipe, index) {
+            Pipe.pipeHeight();
+        });
+
+    }
+
+    //Inputs
+    const SPACE_KEY = 32;
+    var spaceKeyPressed = false;
+
+    // Player Variables
+    var players = [];
+    var playerTotal = 1;
+    var gravity = 0.25;
+    var jump = false;
+    var jHeight = -4.6;
+    var ppY = 0;
+    var ppW = 0;
+    var ppH = 0;
+
+    // Pipe Variables
+    var pipes = [];
+    var pipeTotal = 1;
+
+    // Set up Variables
+    var setUp = true;
+    var setUpPipe = true;
+
+    //Game Variables
+    var gameOver = false;
+    var score = 0;
+    var difficulty = '';
+    var name = '';
+    var userName = '';
+    
+//    while (name > 6 || name == '') {
+//        name = prompt('What is name?');
+//    }
+//    
+//    while (difficulty != 'easy' && difficulty != 'hard') {
+//        difficulty = prompt('Level of difficulty? easy or hard') || '';
+//        difficulty = difficulty.toLowerCase();
+//        console.log(difficulty);
+//    }
+
+    function mainLoop() {
+
+        colorRect(0, 0, canvas.width, canvas.height, 'white'); // Background
+        drawSprite(imgs.bg, 0, 0, 268, 268, 0, 0, canvas.width, canvas.height);
+
+        if (gameOver) {
+            dead();
+        }
+
+        if (setUp) {
+            settingUp();
+            setUp = false;
+        }
+
+        if (players.length > 0) {
+            players.forEach(function(player, index) {
+                player.drawPlayer();
+                player.pJump();
+                player.pFall();
+                player.pMove();
+                player.updateYpos();
+                player.deathResetP();
+            });
+        }
+
+        if (pipes.length > 0) {
+            pipes.forEach(function(Pipe, index) {
+                Pipe.drawPipe();
+                Pipe.pipeMove();
+                Pipe.pipeHit();
+                Pipe.scoreAdd();
+            });
+        }
+
+        if (setUpPipe) {
+            pipes.forEach(function(Pipe, index) {
+                Pipe.pipeHeight();
+                setUpPipe = false;
+            });
+        }
+        drawText(canvas.width / 2, 100, 200, 'white', score, );
+
+    }
+
+    function loadImgAssets() {
+        imgs = {};
+
+        imgs.player = new Image();
+        imgs.player.src = 'player.png';
+
+        imgs.bg = new Image();
+        imgs.bg.src = 'image/background.png';
+
+        imgs.pipe = new Image();
+        imgs.pipe.src = 'image/pipe.png';
+
+        imgs.pipeb = new Image();
+        imgs.pipeb.src = 'image/pipeb.png';
+
+        return imgs;
+    }
+
+    // Color Rect for drawing canvas and objects
+    function colorRect(x, y, w, h, color) {
+        canvasContext.fillStyle = color;
+        canvasContext.fillRect(x, y, w, h);
+    }
+
+    function drawSprite(img, sX, sY, sW, sH, dX, dY, dW, dH) {
+        canvasContext.drawImage(img, sX, sY, sW, sH, dX, dY, dW, dH);
+    }
+
+    //Score Text
+    function drawText(x, y, w, color, text) {
+        canvasContext.fillStyle = color;
+        canvasContext.font = "30px Georgia";
+        canvasContext.fillText(text, x, y, w)
+    }
+
+    //Space Key Detection
+    function keyPressed(evt) {
+        if (evt.keyCode == SPACE_KEY) {
+            spaceKeyPressed = true;
+            jump = true;
+        }
+    }
+
+    function keyReleased(evt) {
+        if (evt.keyCode == SPACE_KEY) {
+            spaceKeyPressed = false;
+        }
+    }
+
+
+    // Player Class
+    function makePlayer() { // player movement and shit
+
+        var pWidth = 30;
+        const pHeight = 30;
+        var pXpos = canvas.width / 3;
+        var pYpos = ppY;
+        var pYspeed = 0;
+        var pColor = 'brown';
+
+        var p = new Player(pXpos, pYpos, pWidth, pHeight, pColor, pYspeed);
+        players.push(p);
+
+    }
+
+
+    function makePipe() {
+
+        const pipeWidth = 70;
+        var pipeHeight = 200;
+        var pipeXpos = canvas.width;
+        var pipeYpos = 0;
+        var pipeColor = 'green';
+        var pipeXspeed = -3;
+        var pipeGap = 90;
+        var pipeBottomY = pipeYpos + pipeHeight + pipeGap;
+
+        var pipe = new Pipe(pipeXpos, pipeYpos, pipeBottomY, pipeWidth, pipeHeight, pipeColor, pipeXspeed, pipeGap);
+
+        pipes.push(pipe);
+    }
+
+    function settingUp() {
+        for (i = 0; i < playerTotal; i++) {
+            ppY = canvas.height / 3;
+            makePlayer();
+        }
+
+        for (i = 0; i < pipeTotal; i++) {
+            makePipe();
+        }
+    }
+
+    function dead() {
+        pipes.pop();
+        players.pop();
+        if (gameOver && spaceKeyPressed) {
+            gameOver = false;
+            ppY = canvas.height / 3;
+            score = 0;
+            setUpPipe = true;
+            makePipe();
+            makePlayer();
+        }
+    }
+
+</script>
