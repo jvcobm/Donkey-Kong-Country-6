@@ -1,4 +1,5 @@
 <!doctype html>
+
 <body>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
 </body>
@@ -6,39 +7,50 @@
 
 <html>
 <style>
-    html{
-        background-color:white;
+    html {
+        background-color: white;
     }
-    
-    canvas{
+
+    canvas {
         border: 2px solid black;
     }
 </style>
+
 </html>
 
 
 
-<script src='player.js'></script> 
+<script src='player.js'></script>
 <script src='Pipe.js'></script>
 
+
 <script>
-var canvas, canvasContext;
-    
-window.onload = function(){
-    canvas = document.getElementById('gameCanvas');
-    canvasContext = canvas.getContext('2d');
-    
-    document.addEventListener('keydown', keyPressed);
-    document.addEventListener('keyup', keyReleased);
-    
-    setInterval(mainLoop, 1000/60 );
-}
-//Inputs
+    var canvas, canvasContext, imageAssets;
+
+    // Loads functions when window loads
+    window.onload = function() {
+        
+        canvas = document.getElementById('gameCanvas');
+        canvasContext = canvas.getContext('2d');
+        imageAssets = loadImgAssets();
+
+        document.addEventListener('keydown', keyPressed);
+        document.addEventListener('keyup', keyReleased);
+
+        setInterval(mainLoop, 1000 / 60);
+
+        pipes.forEach(function(Pipe, index) {
+            Pipe.pipeHeight();
+        });
+
+    }
+
+    //Inputs
     const SPACE_KEY = 32;
     var spaceKeyPressed = false;
-    
-// Player Variables
-    var players =[];
+
+    // Player Variables
+    var players = [];
     var playerTotal = 1;
     var gravity = 0.25;
     var jump = false;
@@ -46,118 +58,202 @@ window.onload = function(){
     var ppY = 0;
     var ppW = 0;
     var ppH = 0;
-    
-// Pipe Variables
-    var pipes =[];
+
+    // Pipe Variables
+    var pipes = [];
     var pipeTotal = 1;
-    
-// Set up Variables
+
+    // Set up Variables
     var setUp = true;
+    var setUpPipe = true;
+
+    //Game Variables
     var gameOver = false;
+    var score = 0;
+    var difficulty = '';
+    var name = '';
+    var difSpeed = 0;
     
-function mainLoop(){
-        
-        colorRect(0,0,canvas.width,canvas.height,'white'); // Background
-        
-        dead();    
+    // Name and difficulty Prompts
+        while (name == '') {
+            name = prompt('Hello what is your name?', 'Jacob') || '';
+        }
     
-        if(setUp){
+        while (difficulty != 'easy' && difficulty != 'hard') {
+            difficulty = prompt('Hello ' + name +', what level of difficulty would you like to play? (easy or hard)', 'Easy') || '';
+            difficulty = difficulty.toLowerCase();
+            console.log('Current player is ' + name + ' playing ' + difficulty + ' difficulty.');
+            
+            if(difficulty == 'easy') {
+                difSpeed = -3;
+            }
+            if(difficulty == 'hard') {
+                difSpeed = -5;
+            }
+        }
+    
+        alert('Press the SPACE BAR to jump Donkey Kong throught the coral, get high score. Press SPACE BAR to restart if you die.');
+    
+    // Every function in here is go time
+    function mainLoop() {
+        
+        drawSprite(imgs.bg, 0, 0, 268, 268, 0, 0, canvas.width, canvas.height); // Background image 
+
+        if (gameOver) { // when gameover do function dead
+            dead();
+        }
+
+        if (setUp) { // if setup, setup then setup no longer
             settingUp();
             setUp = false;
         }
-    
-        if(players.length > 0){
-            players.forEach(function(player,index){
-              player.drawPlayer();  
-              player.pJump();
-              player.pFall();
-              player.pMove();
-              player.updateYpos();
+
+        if (players.length > 0) { // player functions from player.js
+            players.forEach(function(player, index) {
+                player.drawPlayer();
+                player.pJump();
+                player.pFall();
+                player.pMove();
+                player.updateYpos();
+                player.deathResetP();
             });
         }
-    
-        if(pipes.length > 0){
-            pipes.forEach(function(Pipe,index){
+
+        if (pipes.length > 0) { // pipe functions from pipe.js
+            pipes.forEach(function(Pipe, index) {
                 Pipe.drawPipe();
                 Pipe.pipeMove();
                 Pipe.pipeHit();
+                Pipe.scoreAdd();
             });
         }
-}
-    
-    
-// Color Rect for drawing canvas and objects
-function colorRect(x,y,w,h,color){ 
-        canvasContext.fillStyle = color;
-        canvasContext.fillRect(x,y,w,h);
-}
-//Space Key Detection
-    function keyPressed(evt) {
-        if(evt.keyCode == SPACE_KEY){
-            jump = true;
-            spaceKeyPressed = true;
-            
-            if(gameOver){
-                settingUp(); 
-                gameOver = false;
-            }
+
+        if (setUpPipe) { // Pipe go height on restart
+            pipes.forEach(function(Pipe, index) {
+                Pipe.pipeHeight();
+                setUpPipe = false;
+            });
         }
-    }   
+        // Score text
+        drawText(canvas.width / 2, 100, 200, 'white', score, );
+
+    }
     
-      function keyReleased(evt) {
-        if(evt.keyCode == SPACE_KEY){
+    // Sources images from folder to be rendered in the canvas
+    function loadImgAssets() {
+        imgs = {};
+
+        imgs.player = new Image();
+        imgs.player.src = 'player.png';
+
+        imgs.bg = new Image();
+        imgs.bg.src = 'image/background.png';
+
+        imgs.pipe = new Image();
+        imgs.pipe.src = 'image/pipe.png';
+
+        imgs.pipeb = new Image();
+        imgs.pipeb.src = 'image/pipeb.png';
+
+        return imgs;
+    }
+    
+    // Color Rect for drawing canvas and objects
+    function colorRect(x, y, w, h, color) {
+        canvasContext.fillStyle = color;
+        canvasContext.fillRect(x, y, w, h);
+    }
+    
+    // Sprite drawing function
+    function drawSprite(img, sX, sY, sW, sH, dX, dY, dW, dH) {
+        canvasContext.drawImage(img, sX, sY, sW, sH, dX, dY, dW, dH);
+    }
+
+    //Score Text
+    function drawText(x, y, w, color, text) {
+        canvasContext.fillStyle = color;
+        canvasContext.font = "30px Georgia";
+        canvasContext.fillText(text, x, y, w)
+    }
+
+    //Space Key Detection
+    function keyPressed(evt) {
+        if (evt.keyCode == SPACE_KEY) {
+            spaceKeyPressed = true;
+            jump = true;
+        }
+    }
+
+    function keyReleased(evt) {
+        if (evt.keyCode == SPACE_KEY) {
             spaceKeyPressed = false;
         }
-      }
-    
-// Player Class
-function makePlayer(){ // player movement and shit
+    }
+
+
+    // Player Class
+    function makePlayer() { // creates player from player.js
+
+        var pWidth = 30;
+        const pHeight = 30;
+        var pXpos = canvas.width / 3;
+        var pYpos = ppY;
+        var pYspeed = 0;
+        var pColor = 'brown';
+
+        var p = new Player(pXpos, pYpos, pWidth, pHeight, pColor, pYspeed);
+        players.push(p);
+
+    }
+
+    // Pipe Class
+    function makePipe() { // Creates pipe from pipe.js
+
+        const pipeWidth = 70;
+        var pipeHeight = 200;
+        var pipeXpos = canvas.width;
+        var pipeYpos = 0;
+        var pipeColor = 'green';
+        var pipeGap = 90;
+        var pipeBottomY = pipeYpos + pipeHeight + pipeGap;
+        var pipeXspeed = difSpeed;
         
-            var pWidth = 30;
-            const pHeight = 30;
-            var pXpos = canvas.width / 3;
-            var pYpos = ppY;
-            var pYspeed = 0;
-            var pColor = 'brown';
-    
-            var p = new Player (pXpos,pYpos,pWidth,pHeight,pColor,pYspeed);
-            players.push(p);
-    
+        var pipe = new Pipe(pipeXpos, pipeYpos, pipeBottomY, pipeWidth, pipeHeight, pipeColor, pipeXspeed, pipeGap);
+
+        pipes.push(pipe);
     }
 
-    
-function makePipe(){
-    
-    const pipeWidth = 70;
-    var pipeHeight = 200;
-    var pipeXpos = canvas.width - pipeWidth;
-    var pipeYpos = 0;
-    var pipeColor = 'green';
-    var pipeXspeed = -3;
-    var pipeGap = 90;
-    var pipeBottomY = pipeYpos + pipeHeight + pipeGap;
-    
-    var pipe = new Pipe(pipeXpos,pipeYpos,pipeBottomY,pipeWidth,pipeHeight,pipeColor,pipeXspeed,pipeGap);
-    
-    pipes.push(pipe);        
-}
+    function settingUp() {
+        for (i = 0; i < playerTotal; i++) {
+            ppY = canvas.height / 3;
+            makePlayer();
+        }
 
-function settingUp(){
-            for (i=0; i < playerTotal; i++){
-                makePlayer();
-                gameOver = false;
-            }
-    
-            for (i=0; i < pipeTotal; i++){
-                makePipe();
-            }
-}
-
-function dead(){
-    if(gameOver){
-        delete players[0];
-        delete pipes[0];
+        for (i = 0; i < pipeTotal; i++) {
+            makePipe();
+        }
     }
-}
     
+    // Function that plays when the player dies
+    function dead() {
+        pipes.pop();
+        players.pop();
+        
+        if(score > 0){
+            alert('Hello ' + name + ', your score was ' + score + ' on ' + difficulty + ' difficulty. Press SPACE BAR to restart.')
+        }
+        
+            score = 0;
+        
+        if (gameOver && spaceKeyPressed) {
+            gameOver = false;
+            ppY = canvas.height / 3 * 2;
+            setUpPipe = true;
+            makePipe();
+            makePlayer();
+        }
+    }
+
 </script>
+
+<input type="button" value="Restart Game" onClick="window.location.reload()">
